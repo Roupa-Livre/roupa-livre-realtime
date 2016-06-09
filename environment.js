@@ -20,6 +20,8 @@ module.exports = {
         var io = socketIO(server);
 
         io.on('connection', function(socket) {
+            console.log('connection');
+
             socket.on('disconnect',function(){
                 redis.sub.removeListener('message', onMessage); 
             });
@@ -27,27 +29,29 @@ module.exports = {
             redis.sub.on('message', onMessage);
 
             function onMessage(channel, message){
+                console.log(channel);
+                console.log(message);
                 // can't deliver a message to a socket with no handshake(session) established
                 if (socket.request === undefined) {
                     return;
                 }
 
-                var data = JSON.parse(message);
-                if (data.hasOwnProperty('type') && data.type == 'realtime_message') {
-                    var msg = data;
+                var messageData = JSON.parse(message);
+                if (messageData.hasOwnProperty('type') && messageData.type == 'message') {
+                    console.log('reading message');
+                    var msg = messageData.data;
+                    var chat_id = msg.chat.id;
+                    msg.chat_id = chat_id;
 
-                    var currentSocketIoUserId = socket.request.session['user_id'];
+                    var channel_name_1 = 'user:' + msg.chat.user_1_id + ':chat:' + chat_id + ':messages';
+                    var channel_name_2 =  'user:' + msg.chat.user_2_id + ':chat:' + chat_id + ':messages';
 
-                    // if the recipient user id list is not part of the message
-                    // then define it anyways.
-                    if (msg.recipient_user_ids === undefined || msg.recipient_user_ids == null) {
-                        msg.recipient_user_ids = [];
-                    }
-
-                    if (msg.recipient_user_ids.indexOf(currentSocketIoUserId) != -1) {
-                        delete msg.recipient_user_ids; //don't include this with the message
-                        socket.emit('realtime_msg', msg);
-                    }
+                    delete msg['chat'];
+                    
+                    console.log('sending message: ' + channel_name_1);
+                    socket.emit(channel_name_1, msg);
+                    console.log('sending message: ' + channel_name_2);
+                    socket.emit(channel_name_2, msg);
                 }
             };
 

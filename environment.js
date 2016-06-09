@@ -57,7 +57,11 @@ module.exports = {
     },
 
     authorize: function authorize(io, redis) {
+        // caso a gente va fazer parse
+        // var cookieParser = require('socket.io-cookie');
         var current_module = this;
+        
+        // io.use(cookieParser);
         io.use(function(socket, next) {
             var sessionId = null;
             var userId = null;
@@ -79,10 +83,11 @@ module.exports = {
             // autenticar sem REDIS
             if (socket.request.session == null) {
                 // console.log(socket.request);
-                if (current_module.tokensHash.hasOwnProperty(params['access-token']))
+                var requestToken = params['access-token'];
+                if (current_module.tokensHash.hasOwnProperty(requestToken)) {
                     next()
+                }
                 else {
-                    console.log(current_module.tokensHash);
                     console.log('Unauthorized JS user (session)');
                     next(new Error('Unauthorized JS user (session)'));
                 }

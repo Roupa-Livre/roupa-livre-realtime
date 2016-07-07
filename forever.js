@@ -1,3 +1,4 @@
+// nao estamos mais usando no procfile pq o heroku nao exige
 var forever = require('forever-monitor');
 
 var child = new(forever.Monitor)('realtime-server.js', {
